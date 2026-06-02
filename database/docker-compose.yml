@@ -1,0 +1,31 @@
+# 一键启动业务后端所需的 PostgreSQL（开发/联调用）
+# 用法：
+#   cd database
+#   docker compose up -d
+# 首次启动会自动执行 init/ 下的建表脚本，创建好所有表。
+# 数据持久化在命名卷 ai_cs_pgdata，容器重启不丢数据。
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: ai-cs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai_customer_service
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - ai_cs_pgdata:/var/lib/postgresql/data
+      # 仅在数据卷为空（首次初始化）时执行，建表
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_customer_service"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  ai_cs_pgdata:
