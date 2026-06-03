@@ -8,7 +8,7 @@
       ↓ HTTPS
 业务后端 (NestJS)  ← 保存 Dify Key、鉴权、日志、限流、敏感词、转人工
       ↓ 内网 HTTP
-Dify（你已用 Docker 本地部署）
+Dify（Docker 本地部署）
       ↓
 本地模型 / 知识库 / 向量库
 ```

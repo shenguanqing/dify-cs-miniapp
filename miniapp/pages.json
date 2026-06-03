@@ -6,7 +6,9 @@
         "navigationBarTitleText": "智能客服",
         "navigationBarBackgroundColor": "#ffffff",
         "navigationBarTextStyle": "black",
-        "enablePullDownRefresh": false
+        "enablePullDownRefresh": false,
+        "backgroundColor": "#ffffff",
+        "backgroundTextStyle": "dark"
       }
     }
   ],
@@ -14,6 +16,9 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "智能客服",
     "navigationBarBackgroundColor": "#ffffff",
-    "backgroundColor": "#f2f2f7"
+    "backgroundColor": "#ffffff",
+    "backgroundTextStyle": "dark",
+    "navigationBarFontSize": "17px",
+    "navigationBarTitleWidth": "200px"
   }
 }
