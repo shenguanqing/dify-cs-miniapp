@@ -60,6 +60,7 @@ export class AiController {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders?.();
 
     const started = Date.now();
@@ -74,11 +75,17 @@ export class AiController {
         conversationId: conv.difyConversationId,
       });
 
-      let buffer = '';
+      // 使用 Buffer 暂存原始字节，避免中文多字节字符在 chunk 边界被切断导致乱码
+      let lineBuffer = Buffer.alloc(0);
       stream.on('data', (chunk: Buffer) => {
-        buffer += chunk.toString('utf-8');
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
+        lineBuffer = Buffer.concat([lineBuffer, chunk]);
+        // 按换行符拆分，最后一段可能不完整，保留到下次
+        const newlineIdx = lineBuffer.lastIndexOf(0x0a); // \n
+        if (newlineIdx < 0) return;
+        const completePart = lineBuffer.subarray(0, newlineIdx + 1);
+        lineBuffer = lineBuffer.subarray(newlineIdx + 1);
+        const text = completePart.toString('utf-8');
+        const lines = text.split('\n');
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed.startsWith('data:')) continue;
@@ -104,6 +111,24 @@ export class AiController {
       });
 
       stream.on('end', async () => {
+        // 处理 buffer 中剩余的最后一段
+        if (lineBuffer.length > 0) {
+          const remaining = lineBuffer.toString('utf-8').trim();
+          if (remaining.startsWith('data:')) {
+            const jsonStr = remaining.slice(5).trim();
+            if (jsonStr && jsonStr !== '[DONE]') {
+              try {
+                const evt = JSON.parse(jsonStr);
+                if (evt.conversation_id) difyConversationId = evt.conversation_id;
+                if (evt.message_id) difyMessageId = evt.message_id;
+                if (evt.event === 'message' && evt.answer) {
+                  answer += evt.answer;
+                }
+              } catch { /* 跳过 */ }
+            }
+          }
+        }
+
         await this.aiService.saveStreamResult(
           userId,
           conv,

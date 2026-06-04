@@ -98,14 +98,43 @@ export function sendChatStream({ question, conversationId, scene }, callbacks) {
 /** 将 ArrayBuffer 解码为 UTF-8 字符串 */
 function arrayBufferToString(buffer) {
   const bytes = new Uint8Array(buffer);
-  // 小程序环境通常有 TextDecoder
+  // 优先使用 TextDecoder
   if (typeof TextDecoder !== 'undefined') {
     return new TextDecoder('utf-8').decode(bytes);
   }
-  // 兜底：逐字节解码（仅支持 ASCII/基础拉丁）
+  // 手动 UTF-8 解码（兼容不支持 TextDecoder 的环境）
   let result = '';
-  for (let i = 0; i < bytes.length; i++) {
-    result += String.fromCharCode(bytes[i]);
+  let i = 0;
+  while (i < bytes.length) {
+    const b0 = bytes[i];
+    if (b0 < 0x80) {
+      // 1 字节（ASCII）
+      result += String.fromCharCode(b0);
+      i += 1;
+    } else if ((b0 & 0xe0) === 0xc0) {
+      // 2 字节
+      result += String.fromCharCode(((b0 & 0x1f) << 6) | (bytes[i + 1] & 0x3f));
+      i += 2;
+    } else if ((b0 & 0xf0) === 0xe0) {
+      // 3 字节（中文）
+      result += String.fromCharCode(
+        ((b0 & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f),
+      );
+      i += 3;
+    } else if ((b0 & 0xf8) === 0xf0) {
+      // 4 字节（emoji 等，需要代理对）
+      const cp =
+        ((b0 & 0x07) << 18) |
+        ((bytes[i + 1] & 0x3f) << 12) |
+        ((bytes[i + 2] & 0x3f) << 6) |
+        (bytes[i + 3] & 0x3f);
+      result += String.fromCharCode(0xd800 + ((cp - 0x10000) >> 10), 0xdc00 + ((cp - 0x10000) & 0x3ff));
+      i += 4;
+    } else {
+      // 无效字节，跳过
+      result += String.fromCharCode(b0);
+      i += 1;
+    }
   }
   return result;
 }
