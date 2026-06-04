@@ -9,6 +9,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -34,7 +35,11 @@ export class AiController {
    * - stream=false（默认）：阻塞模式，返回完整答案，最省心。
    * - stream=true：SSE 流式，小程序需在 wx.request 开启 enableChunked。
    * POST /api/ai/chat
+   *
+   * 单独限流：AI 调用最消耗资源（Dify + 大模型），比全局更严格。
+   * 默认 60 秒内最多 10 次提问，防止刷接口、控制成本。
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('chat')
   async chat(
     @CurrentUser('id') userId: string,

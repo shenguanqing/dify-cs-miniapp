@@ -53,18 +53,18 @@ function parseInline(text) {
   html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
 
   // 加粗
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="bold">$1</strong>');
+  html = html.replace(/__([^_]+)__/g, '<strong class="bold">$1</strong>');
 
   // 斜体
-  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+  html = html.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
+  html = html.replace(/_([^_]+)_/g, '<em class="italic">$1</em>');
 
   // 删除线
-  html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+  html = html.replace(/~~([^~]+)~~/g, '<del class="strikethrough">$1</del>');
 
   // 链接
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="link">$1</a>');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a class="link" data-url="$2">$1</a>');
 
   // 图片（添加 data-src 用于预览）
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="image" data-src="$2"/>');
@@ -107,7 +107,7 @@ function restoreCodeBlocks(html, codeBlocks) {
   codeBlocks.forEach((block, index) => {
     const placeholder = `__CODE_BLOCK_${index}__`;
     const highlightedCode = highlightCode(block.code, block.lang);
-    const codeHtml = `<pre class="code-block"><view class="code-content">${highlightedCode}</view></pre>`;
+    const codeHtml = `<pre class="code-block"><code class="code-content">${highlightedCode}</code></pre>`;
     result = result.split(placeholder).join(codeHtml);
   });
   return result;
@@ -161,10 +161,7 @@ function parseBlock(text) {
       const isChecked = trimmedLine.match(/^[-*+]\s+\[x\]\s+/i);
       const content = trimmedLine.replace(/^[-*+]\s+\[[ xX]\]\s+/, '');
       const checkboxClass = isChecked ? 'task-checkbox checked' : 'task-checkbox';
-      html += `<li class="task-item">
-        <view class="${checkboxClass}"></view>
-        <span class="task-content${isChecked ? ' completed' : ''}">${parseInline(content)}</span>
-      </li>`;
+      html += `<li class="task-item"><span class="${checkboxClass}"></span><span class="task-content${isChecked ? ' completed' : ''}">${parseInline(content)}</span></li>`;
     }
     // 无序列表
     else if (trimmedLine.match(/^[-*+]\s+/)) {
@@ -278,21 +275,21 @@ function parseTable(lines, startIndex) {
   let html = '<table class="markdown-table">';
 
   // 表头
-  html += '<thead><tr>';
+  html += '<thead><tr class="table-header-row">';
   headerCells.forEach((cell) => {
     html += `<th class="table-header">${parseInline(cell)}</th>`;
   });
   html += '</tr></thead>';
 
   // 表体
-  html += '<tbody>';
+  html += '<tbody class="table-body">';
   for (let j = 2; j < tableLines.length; j++) {
     const cells = tableLines[j]
       .split('|')
       .filter((cell) => cell.trim() !== '')
       .map((cell) => cell.trim());
 
-    html += '<tr>';
+    html += '<tr class="table-row">';
     cells.forEach((cell) => {
       html += `<td class="table-cell">${parseInline(cell)}</td>`;
     });

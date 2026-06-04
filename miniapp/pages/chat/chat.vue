@@ -1,5 +1,13 @@
 <template>
   <view class="chat-page">
+    <!-- 顶部栏：有历史消息时显示「新对话」入口 -->
+    <view class="top-bar" v-if="messages.length > 0">
+      <view class="new-chat-btn" @tap="newChat">
+        <text class="new-chat-icon">＋</text>
+        <text class="new-chat-text">新对话</text>
+      </view>
+    </view>
+
     <!-- 消息列表 -->
     <scroll-view
       class="msg-list"
@@ -123,8 +131,12 @@ import {
   sendChat,
   sendFeedback,
   requestHandoff,
+  getHistory,
 } from '../../api/chat';
 import { markdownToHtml } from '../../utils/markdown';
+
+// 本地存储 key：保存当前会话 ID，下次进入小程序时恢复历史
+const CONVERSATION_STORAGE_KEY = 'ai_cs_conversation_id';
 
 export default {
   data() {
@@ -136,14 +148,30 @@ export default {
       conversationId: '',
       scene: 'default',
       scrollTop: 0,
+      loadingHistory: false,
     };
   },
   async onLoad() {
     try {
       await ensureLogin();
       this.config = await getConfig();
+
+      // 尝试恢复上次的会话并加载历史消息
+      const savedId = uni.getStorageSync(CONVERSATION_STORAGE_KEY);
+      if (savedId) {
+        const restored = await this.loadHistory(savedId);
+        if (restored) {
+          this.conversationId = savedId;
+          return;
+        }
+        // 历史加载失败（会话已失效），清除并新建
+        uni.removeStorageSync(CONVERSATION_STORAGE_KEY);
+      }
+
+      // 没有可恢复的会话，新建一个
       const conv = await newConversation(this.scene);
       this.conversationId = conv.conversationId;
+      uni.setStorageSync(CONVERSATION_STORAGE_KEY, conv.conversationId);
     } catch (e) {
       uni.showToast({ title: e.message || '初始化失败', icon: 'none' });
     }
@@ -153,6 +181,64 @@ export default {
       this.$nextTick(() => {
         this.scrollTop = this.scrollTop + 100000;
       });
+    },
+
+    /**
+     * 加载指定会话的历史消息并渲染。
+     * 后端 history 返回的是「一问一答」记录，需拆成 user / ai 两条气泡。
+     * @returns {boolean} 是否成功加载到历史
+     */
+    async loadHistory(conversationId) {
+      this.loadingHistory = true;
+      try {
+        const list = await getHistory(conversationId);
+        if (!Array.isArray(list) || list.length === 0) {
+          return false;
+        }
+
+        const msgs = [];
+        list.forEach((item) => {
+          // 用户提问
+          if (item.question) {
+            msgs.push({ role: 'user', content: item.question });
+          }
+          // AI 回答（直接渲染 Markdown，无打字动画）
+          if (item.answer) {
+            msgs.push({
+              role: 'ai',
+              content: item.answer,
+              renderedContent: this.renderMarkdown(item.answer),
+              typing: false,
+              sources: [],
+              feedback: item.feedback || 0,
+              messageId: item.id || '',
+            });
+          }
+        });
+
+        this.messages = msgs;
+        this.scrollToBottom();
+        return true;
+      } catch (e) {
+        // 会话不存在或网络异常，交由调用方处理
+        return false;
+      } finally {
+        this.loadingHistory = false;
+      }
+    },
+
+    /** 开启新对话：清空当前消息并新建会话。 */
+    async newChat() {
+      if (this.sending) return;
+      try {
+        const conv = await newConversation(this.scene);
+        this.conversationId = conv.conversationId;
+        uni.setStorageSync(CONVERSATION_STORAGE_KEY, conv.conversationId);
+        this.messages = [];
+        this.inputText = '';
+      } catch (e) {
+        uni.showToast({ title: e.message || '新建会话失败', icon: 'none' });
+      }
     },
 
     renderMarkdown(content) {
@@ -190,6 +276,10 @@ export default {
           scene: this.scene,
         });
         this.conversationId = data.conversationId || this.conversationId;
+        // 持久化会话 ID，下次进入小程序可恢复历史
+        if (this.conversationId) {
+          uni.setStorageSync(CONVERSATION_STORAGE_KEY, this.conversationId);
+        }
         aiMsg.messageId = data.messageId;
         aiMsg.sources = data.sources || [];
         await this.typeWriter(aiMsg, data.answer || '（暂无回答）');
@@ -337,6 +427,45 @@ page {
   height: 100vh;
   background: var(--color-bg);
   overflow: hidden;
+}
+
+/* ===== 顶部栏 ===== */
+.top-bar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 12rpx 24rpx;
+  border-bottom: 1rpx solid var(--color-border-light);
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 20rpx;
+  background: var(--color-bg-secondary);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+}
+
+.new-chat-btn:active {
+  transform: scale(0.95);
+  background: var(--color-bg-tertiary);
+}
+
+.new-chat-icon {
+  font-size: 28rpx;
+  color: var(--color-primary);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.new-chat-text {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  font-weight: 500;
 }
 
 /* ===== 消息列表 ===== */
@@ -761,17 +890,20 @@ page {
 }
 
 /* 加粗和斜体 */
-.bubble-markdown strong {
+.bubble-markdown .bold {
   font-weight: 700;
+  display: inline;
 }
 
-.bubble-markdown em {
+.bubble-markdown .italic {
   font-style: italic;
+  display: inline;
 }
 
-.bubble-markdown del {
+.bubble-markdown .strikethrough {
   text-decoration: line-through;
   opacity: 0.7;
+  display: inline;
 }
 
 /* 行内代码 */
@@ -829,23 +961,30 @@ page {
 /* 链接 */
 .bubble-markdown .link {
   color: var(--color-primary);
-  text-decoration: none;
-  border-bottom: 1rpx solid rgba(37, 99, 235, 0.3);
-  padding-bottom: 2rpx;
+  text-decoration: underline;
+  display: inline;
 }
 
 /* 图片 */
+.bubble-markdown .image-container {
+  margin: 12rpx 0;
+}
+
 .bubble-markdown .image {
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-md);
-  margin: 12rpx 0;
   cursor: pointer;
   transition: opacity 0.2s ease;
 }
 
 .bubble-markdown .image:active {
   opacity: 0.8;
+}
+
+/* 换行 */
+.bubble-markdown .line-break {
+  height: 16rpx;
 }
 
 /* 分隔线 */
@@ -882,15 +1021,18 @@ page {
 /* 表格 */
 .bubble-markdown .markdown-table {
   width: 100%;
-  border-collapse: collapse;
   margin: 16rpx 0;
   font-size: 26rpx;
   overflow-x: auto;
-  display: block;
+}
+
+.bubble-markdown .table-header-row {
+  display: flex;
+  background: var(--color-bg-tertiary);
 }
 
 .bubble-markdown .table-header {
-  background: var(--color-bg-tertiary);
+  flex: 1;
   padding: 16rpx 20rpx;
   text-align: left;
   font-weight: 700;
@@ -899,15 +1041,25 @@ page {
   white-space: nowrap;
 }
 
+.bubble-markdown .table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.bubble-markdown .table-row {
+  display: flex;
+}
+
+.bubble-markdown .table-row:hover .table-cell {
+  background: var(--color-bg-secondary);
+}
+
 .bubble-markdown .table-cell {
+  flex: 1;
   padding: 14rpx 20rpx;
   border: 2rpx solid var(--color-border);
   color: var(--color-text-secondary);
   vertical-align: top;
-}
-
-.bubble-markdown .markdown-table tr:hover .table-cell {
-  background: var(--color-bg-secondary);
 }
 
 /* ===== 语法高亮样式 ===== */

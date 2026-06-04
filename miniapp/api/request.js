@@ -41,6 +41,9 @@ export function request(options) {
           resolve(body.data ?? null);
         } else if (res.statusCode === 401) {
           reject({ code: 401, message: body.message || '登录已过期' });
+        } else if (res.statusCode === 429) {
+          // 触发限流：提问过于频繁
+          reject({ code: 429, message: '您的操作太频繁了，请稍后再试' });
         } else {
           reject({ code: body.code, message: body.message || '请求失败' });
         }
