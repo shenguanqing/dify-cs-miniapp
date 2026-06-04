@@ -4,5 +4,5 @@
 export const BASE_URL = 'http://localhost:3000/api';
 
 // 是否使用流式（SSE）。需要后端 stream=true 且基础库支持 enableChunked。
-// 默认 false：用阻塞模式 + 前端打字机效果，兼容性最好。
-export const USE_STREAM = false;
+// 默认 true：真流式输出，回答逐字出现，体验更好。
+export const USE_STREAM = true;

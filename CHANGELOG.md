@@ -4,6 +4,33 @@
 
 ---
 
+## v2.1 (2026-06-04)
+
+### 功能清单
+
+| 功能           | 实现文件     | 说明                           |
+| -------------- | ------------ | ------------------------------ |
+| 真流式输出     | chat.js, chat.vue | SSE 流式回答，逐字出现         |
+| 深色模式       | chat.vue     | 跟随系统自动切换，CSS 媒体查询适配 |
+| 字体优化       | App.vue      | 中英文混排，西文优先           |
+| 图片优化       | chat.vue     | 占位背景色，加载过程有视觉反馈 |
+
+### Markdown
+
+修改文件：
+
+- miniapp/api/chat.js：新增 sendChatStream 函数，使用 uni.request enableChunked 接入后端 SSE 流式输出
+- miniapp/api/config.js：USE_STREAM 默认值改为 true，启用真流式
+- miniapp/pages/chat/chat.vue：send() 方法根据 USE_STREAM 分支，流式模式边收边显示，结束后渲染 Markdown；新增深色模式 CSS 变量覆盖与切换逻辑；图片添加占位背景
+
+### UI
+
+- 新增深色模式：通过 manifest.json 启用微信小程序 darkmode，CSS 使用 `@media (prefers-color-scheme: dark)` 媒体查询自动适配（变量覆盖、代码块 GitHub Dark 风格、用户气泡对比度优化），跟随系统自动切换，无需手动操作
+- 字体优化：调整字体栈顺序，西文字体在前中文在后，增加 Noto Sans SC / Source Han Sans SC，行高从 1.5 调整为 1.6
+- 图片优化：image-container 添加占位背景色、最小高度和边框，图片加载过程有视觉反馈
+
+---
+
 ## v2.0 (2026-06-03)
 
 ### 功能清单

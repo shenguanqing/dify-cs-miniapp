@@ -20,16 +20,19 @@ export default {
 <style>
 /* ===== 全局重置和基础样式 ===== */
 page {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  /* 中英文混排优化：西文字体在前（英文优先用），中文字体在后 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC',
+    'Source Han Sans SC', sans-serif;
   font-size: 28rpx;
-  line-height: 1.5;
+  line-height: 1.6;
   color: #0f172a;
   background-color: #ffffff;
   height: 100%;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ===== 全局组件样式 ===== */

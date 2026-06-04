@@ -19,6 +19,9 @@
     "backgroundColor": "#ffffff",
     "backgroundTextStyle": "dark",
     "navigationBarFontSize": "17px",
-    "navigationBarTitleWidth": "200px"
+    "navigationBarTitleWidth": "200px",
+    "mp-weixin": {
+      "darkmode": true
+    }
   }
 }

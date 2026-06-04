@@ -285,6 +285,45 @@ transition: transform 0.2s ease;
 
 ---
 
+## 深色模式
+
+深色模式跟随系统自动切换，通过 `manifest.json` 中 `mp-weixin.darkmode: true` 启用，样式通过 `@media (prefers-color-scheme: dark)` 媒体查询适配，无需手动切换。
+
+### 启用方式
+
+manifest.json 的 mp-weixin 节点添加 `"darkmode": true`，pages.json 的 globalStyle 中同样添加 `mp-weixin.darkmode: true`。框架自动处理导航栏和页面背景的深色适配。
+
+### 深色模式色彩变量
+
+| 类别 | 变量 | 深色取值 | 用途 |
+|------|------|----------|------|
+| 主色 | `--color-primary` | `#3b82f6` | 主要操作 |
+| 主色（浅） | `--color-primary-light` | `#60a5fa` | 渐变终点 |
+| 背景 | `--color-bg` | `#0f172a` | 页面主背景 |
+| 次背景 | `--color-bg-secondary` | `#1e293b` | 次级容器 |
+| 三级背景 | `--color-bg-tertiary` | `#334155` | 标签、占位 |
+| 主文字 | `--color-text-primary` | `#f1f5f9` | 标题、正文 |
+| 次文字 | `--color-text-secondary` | `#94a3b8` | 辅助说明 |
+| 三级文字 | `--color-text-tertiary` | `#64748b` | 弱化信息 |
+| 边框 | `--color-border` | `#334155` | 常规边框 |
+| 浅边框 | `--color-border-light` | `#1e293b` | 分隔线 |
+
+### 深色模式特殊处理
+
+- 代码块：背景加深至 `#010409`，文字 `#c9d1d9`（GitHub Dark 风格）
+- 语法高亮：关键字 `#ff7b72`、内置函数 `#79c0ff`、字符串 `#a5d6ff`、注释 `#8b949e`、数字 `#ffa657`
+- 用户气泡：渐变调整为 `#1d4ed8` → `#2563eb`，保证对比度
+- LaTeX 公式：行内背景调为 `rgba(59, 130, 246, 0.1)`
+- 图片容器：背景使用 `--color-bg-tertiary`
+
+### 切换机制
+
+- 跟随系统深色模式自动切换，无需用户手动操作
+- 样式通过 `@media (prefers-color-scheme: dark)` 媒体查询在 CSS 层面覆盖
+- 框架自动处理导航栏背景、文字颜色和页面背景
+
+---
+
 ## 设计参考
 
 - **Linear**（https://linear.app）— 简洁、专业、高效

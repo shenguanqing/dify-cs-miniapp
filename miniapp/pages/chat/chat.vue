@@ -129,10 +129,12 @@ import {
   getConfig,
   newConversation,
   sendChat,
+  sendChatStream,
   sendFeedback,
   requestHandoff,
   getHistory,
 } from '../../api/chat';
+import { USE_STREAM } from '../../api/config';
 import { markdownToHtml } from '../../utils/markdown';
 
 // 本地存储 key：保存当前会话 ID，下次进入小程序时恢复历史
@@ -269,6 +271,15 @@ export default {
       this.messages.push(aiMsg);
       this.scrollToBottom();
 
+      if (USE_STREAM) {
+        await this.sendStream(text, aiMsg);
+      } else {
+        await this.sendBlocking(text, aiMsg);
+      }
+    },
+
+    /** 阻塞模式：等待完整回答返回，再用打字机效果展示。 */
+    async sendBlocking(text, aiMsg) {
       try {
         const data = await sendChat({
           question: text,
@@ -294,6 +305,41 @@ export default {
         this.sending = false;
         this.scrollToBottom();
       }
+    },
+
+    /** 流式模式（SSE）：边收边显示，回答逐字出现，结束后渲染 Markdown。 */
+    sendStream(text, aiMsg) {
+      return new Promise((resolve) => {
+        sendChatStream(
+          { question: text, conversationId: this.conversationId, scene: this.scene },
+          {
+            onChunk: (chunk) => {
+              aiMsg.content += chunk;
+              this.scrollToBottom();
+            },
+            onDone: (data) => {
+              if (data.conversationId) {
+                this.conversationId = data.conversationId;
+                uni.setStorageSync(CONVERSATION_STORAGE_KEY, data.conversationId);
+              }
+              aiMsg.messageId = data.difyMessageId || '';
+              aiMsg.typing = false;
+              aiMsg.renderedContent = this.renderMarkdown(aiMsg.content || '（暂无回答）');
+              this.sending = false;
+              this.scrollToBottom();
+              resolve();
+            },
+            onError: (message) => {
+              aiMsg.typing = false;
+              aiMsg.content = message || '智能客服繁忙，请稍后再试或转人工';
+              aiMsg.renderedContent = this.renderMarkdown(aiMsg.content);
+              this.sending = false;
+              this.scrollToBottom();
+              resolve();
+            },
+          },
+        );
+      });
     },
 
     typeWriter(msg, fullText) {
@@ -419,6 +465,40 @@ page {
   background-color: var(--color-bg);
   height: 100%;
   overflow: hidden;
+}
+
+/* 深色模式（跟随系统） */
+@media (prefers-color-scheme: dark) {
+  page {
+    --color-primary: #3b82f6;
+    --color-primary-light: #60a5fa;
+    --color-bg: #0f172a;
+    --color-bg-secondary: #1e293b;
+    --color-bg-tertiary: #334155;
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #94a3b8;
+    --color-text-tertiary: #64748b;
+    --color-border: #334155;
+    --color-border-light: #1e293b;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+    color-scheme: dark;
+  }
+
+  .bubble-markdown .code-block { background: #010409; }
+  .bubble-markdown .code-block .code-content { color: #c9d1d9; }
+  .bubble-markdown .hl-keyword { color: #ff7b72; }
+  .bubble-markdown .hl-builtin { color: #79c0ff; }
+  .bubble-markdown .hl-string { color: #a5d6ff; }
+  .bubble-markdown .hl-comment { color: #8b949e; }
+  .bubble-markdown .hl-number { color: #ffa657; }
+  .bubble-markdown .hl-operator { color: #79c0ff; }
+  .bubble-markdown .hl-punctuation { color: #8b949e; }
+  .bubble-markdown .latex-inline { background: rgba(59, 130, 246, 0.1); }
+  .bubble-markdown .latex-block { background: var(--color-bg-secondary); }
+  .bubble-markdown .task-checkbox { border-color: var(--color-border); }
+  .bubble-sent { background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); }
 }
 
 .chat-page {
@@ -968,6 +1048,11 @@ page {
 /* 图片 */
 .bubble-markdown .image-container {
   margin: 12rpx 0;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  min-height: 80rpx;
+  border: 1rpx solid var(--color-border-light);
+  overflow: hidden;
 }
 
 .bubble-markdown .image {
@@ -976,6 +1061,7 @@ page {
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: opacity 0.2s ease;
+  display: block;
 }
 
 .bubble-markdown .image:active {
