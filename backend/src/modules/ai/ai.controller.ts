@@ -129,7 +129,7 @@ export class AiController {
           }
         }
 
-        await this.aiService.saveStreamResult(
+        const localMessageId = await this.aiService.saveStreamResult(
           userId,
           conv,
           dto.question,
@@ -142,6 +142,7 @@ export class AiController {
           `data: ${JSON.stringify({
             type: 'done',
             conversationId: conv.id,
+            messageId: localMessageId,
             difyMessageId,
           })}\n\n`,
         );

@@ -140,7 +140,7 @@ export class AiService {
       conv.difyConversationId = difyConversationId;
       await this.convRepo.save(conv);
     }
-    await this.msgRepo.save(
+    const msg = await this.msgRepo.save(
       this.msgRepo.create({
         userId,
         conversationId: conv.id,
@@ -151,6 +151,7 @@ export class AiService {
         status: 'success',
       }),
     );
+    return msg.id;
   }
 
   /** 历史消息。 */

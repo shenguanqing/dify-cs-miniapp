@@ -81,6 +81,7 @@ export function sendChatStream({ question, conversationId, scene }, callbacks) {
         } else if (evt.type === 'done') {
           (onDone || (() => {}))({
             conversationId: evt.conversationId,
+            messageId: evt.messageId,
             difyMessageId: evt.difyMessageId,
           });
         } else if (evt.type === 'error') {

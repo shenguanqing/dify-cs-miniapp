@@ -328,7 +328,7 @@ export default {
                 this.conversationId = data.conversationId;
                 uni.setStorageSync(CONVERSATION_STORAGE_KEY, data.conversationId);
               }
-              aiMsg.messageId = data.difyMessageId || '';
+              aiMsg.messageId = data.messageId || data.difyMessageId || '';
               aiMsg.typing = false;
               aiMsg.renderedContent = this.renderMarkdown(aiMsg.content || '（暂无回答）');
               aiMsg._justFinished = true;
@@ -992,11 +992,10 @@ page {
 /* 代码块 */
 .bubble-markdown .code-block {
   background: #f6f8fa;
-  border-radius: 12rpx 12rpx 0 0;
-  margin: 16rpx 0 0 0;
+  border-radius: 12rpx;
+  margin: 16rpx 0;
   overflow: hidden;
   border: 2rpx solid #d0d7de;
-  border-bottom: none;
 }
 
 .bubble-markdown .code-content {
@@ -1393,11 +1392,6 @@ page {
     color-scheme: dark;
   }
 
-  /* 代码块 */
-  .bubble-markdown .code-block {
-    background: #161b22;
-    border-color: #30363d;
-  }
   /* 代码块 */
   .bubble-markdown .code-block { background: #161b22; border-color: #30363d; }
   .bubble-markdown .code-content { color: #e6edf3; }
