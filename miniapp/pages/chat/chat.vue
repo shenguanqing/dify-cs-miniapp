@@ -49,17 +49,11 @@
         </view>
 
         <!-- 引用来源 -->
-        <view v-if="m.role === 'ai' && !m.typing && m.sources && m.sources.length" class="sources-row">
-          <view class="sources-card">
-            <view class="sources-header">
-              <view class="sources-icon-wrap">
-                <text class="sources-icon">📚</text>
-              </view>
-              <text class="sources-label">参考来源</text>
-            </view>
-            <view v-for="(s, i) in m.sources" :key="i" class="source-item">
-              <view class="source-index">{{ i + 1 }}</view>
-              <text class="source-name">{{ s.documentName || '文档片段' }}</text>
+        <view v-if="m.role === 'ai' && !m.typing && uniqueSources(m.sources).length" class="sources-row">
+          <text class="sources-label">引用</text>
+          <view class="source-list">
+            <view v-for="(name, i) in uniqueSources(m.sources)" :key="i" class="source-file">
+              <text class="source-file-name">{{ name }}</text>
             </view>
           </view>
         </view>
@@ -211,7 +205,7 @@ export default {
               content: item.answer,
               renderedContent: '',
               typing: false,
-              sources: [],
+              sources: item.sources || [],
               feedback: item.feedback || 0,
               messageId: item.id || '',
             };
@@ -248,6 +242,21 @@ export default {
     renderMarkdown(content) {
       if (!content) return '';
       return markdownToHtml(content);
+    },
+
+    /** 来源去重：返回不重复的文档名数组 */
+    uniqueSources(sources) {
+      if (!Array.isArray(sources)) return [];
+      const seen = new Set();
+      const result = [];
+      sources.forEach((s) => {
+        const name = (s && s.documentName) || '文档片段';
+        if (!seen.has(name)) {
+          seen.add(name);
+          result.push(name);
+        }
+      });
+      return result;
     },
 
     async send() {
@@ -329,6 +338,7 @@ export default {
                 uni.setStorageSync(CONVERSATION_STORAGE_KEY, data.conversationId);
               }
               aiMsg.messageId = data.messageId || data.difyMessageId || '';
+              aiMsg.sources = data.sources || [];
               aiMsg.typing = false;
               aiMsg.renderedContent = this.renderMarkdown(aiMsg.content || '（暂无回答）');
               aiMsg._justFinished = true;
@@ -682,69 +692,41 @@ page {
 
 /* ===== 引用来源卡片 ===== */
 .sources-row {
+  max-width: 84%;
   padding: 8rpx 16rpx 8rpx 84rpx;
 }
 
-.sources-card {
-  background: var(--color-bg);
-  border-radius: var(--radius-lg);
-  padding: 20rpx 24rpx;
-  border: 1rpx solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-}
-
-.sources-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16rpx;
-  gap: 10rpx;
-}
-
-.sources-icon-wrap {
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sources-icon {
-  font-size: 22rpx;
-}
-
 .sources-label {
-  font-size: 24rpx;
-  color: var(--color-text-secondary);
-  font-weight: 600;
+  display: block;
+  font-size: 22rpx;
+  color: var(--color-text-tertiary);
+  margin-bottom: 12rpx;
 }
 
-.source-item {
+/* 来源文件卡片列表（横向排列，可换行） */
+.source-list {
   display: flex;
-  align-items: center;
-  margin-top: 12rpx;
+  flex-wrap: wrap;
   gap: 12rpx;
 }
 
-.source-index {
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: var(--radius-full);
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-secondary);
-  font-size: 20rpx;
-  font-weight: 600;
+.source-file {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  padding: 10rpx 16rpx;
+  background: var(--color-bg-secondary);
+  border: 1rpx solid var(--color-border);
+  border-radius: 12rpx;
+  max-width: 100%;
 }
 
-.source-name {
-  font-size: 26rpx;
+.source-file-name {
+  font-size: 24rpx;
   color: var(--color-text-primary);
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ===== 操作区 ===== */

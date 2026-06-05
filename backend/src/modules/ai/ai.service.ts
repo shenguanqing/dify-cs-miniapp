@@ -47,6 +47,21 @@ export class AiService {
     return this.convRepo.save(this.convRepo.create({ userId, scene }));
   }
 
+  formatSources(resources: any[] = []) {
+    return (resources || []).map((r: any) => ({
+      documentName:
+        r.document_name ??
+        r.documentName ??
+        r.title ??
+        r.metadata?.document_name ??
+        r.metadata?.documentName,
+      content: r.content,
+      score: r.score ?? r.metadata?.score,
+      datasetName: r.dataset_name ?? r.metadata?.dataset_name,
+      segmentId: r.segment_id ?? r.metadata?.segment_id,
+    }));
+  }
+
   /** 阻塞模式问答：转发 Dify -> 落库 -> 返回。 */
   async chatBlocking(userId: string, dto: ChatDto) {
     if (this.sensitive.hasSensitive(dto.question)) {
@@ -90,11 +105,7 @@ export class AiService {
         difyMessageId: result.messageId,
         answer: result.answer,
         // 引用来源（精简）：文档名 + 片段内容
-        sources: (result.retrieverResources || []).map((r: any) => ({
-          documentName: r.document_name,
-          content: r.content,
-          score: r.score,
-        })),
+        sources: this.formatSources(result.retrieverResources),
         latencyMs,
       };
     } catch (e: any) {
@@ -134,6 +145,7 @@ export class AiService {
     answer: string,
     difyConversationId: string,
     difyMessageId: string,
+    retrieverResources: any[],
     latencyMs: number,
   ) {
     if (!conv.difyConversationId && difyConversationId) {
@@ -147,6 +159,7 @@ export class AiService {
         difyMessageId,
         question,
         answer,
+        retrieverResources,
         latencyMs,
         status: 'success',
       }),
@@ -164,6 +177,7 @@ export class AiService {
       id: m.id,
       question: m.question,
       answer: m.answer,
+      sources: this.formatSources(m.retrieverResources || []),
       feedback: m.feedback,
       createdAt: m.createdAt,
     }));

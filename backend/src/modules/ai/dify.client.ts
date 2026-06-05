@@ -17,6 +17,21 @@ export interface DifyBlockingResult {
   totalTokens: number;
 }
 
+export function extractRetrieverResources(payload: any): any[] {
+  const candidates = [
+    payload?.metadata?.retriever_resources,
+    payload?.retriever_resources,
+    payload?.result,
+    payload?.data?.result,
+    payload?.data?.outputs?.result,
+    payload?.workflow_run?.outputs?.result,
+    payload?.data?.workflow_run?.outputs?.result,
+  ];
+
+  const found = candidates.find((item) => Array.isArray(item));
+  return found ?? [];
+}
+
 /**
  * 封装 Dify 应用 API（POST /v1/chat-messages）。
  * Dify Key、内网地址都只保存在后端，不暴露给小程序。
@@ -52,8 +67,7 @@ export class DifyClient {
         answer: data?.answer ?? '',
         conversationId: data?.conversation_id ?? params.conversationId ?? '',
         messageId: data?.message_id ?? '',
-        retrieverResources:
-          data?.metadata?.retriever_resources ?? data?.retriever_resources ?? [],
+        retrieverResources: extractRetrieverResources(data),
         totalTokens: data?.metadata?.usage?.total_tokens ?? 0,
       };
     } catch (e: any) {

@@ -14,7 +14,7 @@ import { Response } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AiService } from './ai.service';
-import { DifyClient } from './dify.client';
+import { DifyClient, extractRetrieverResources } from './dify.client';
 import {
   ChatDto,
   FeedbackDto,
@@ -67,6 +67,12 @@ export class AiController {
     let answer = '';
     let difyConversationId = conv.difyConversationId ?? '';
     let difyMessageId = '';
+    let retrieverResources: any[] = [];
+
+    const collectSources = (evt: any) => {
+      const resources = extractRetrieverResources(evt);
+      if (resources.length) retrieverResources = resources;
+    };
 
     try {
       const stream = await this.dify.chatStream({
@@ -95,6 +101,7 @@ export class AiController {
             const evt = JSON.parse(jsonStr);
             if (evt.conversation_id) difyConversationId = evt.conversation_id;
             if (evt.message_id) difyMessageId = evt.message_id;
+            collectSources(evt);
             if (evt.event === 'message' && evt.answer) {
               answer += evt.answer;
               // 转发为更简洁的事件给前端
@@ -121,6 +128,7 @@ export class AiController {
                 const evt = JSON.parse(jsonStr);
                 if (evt.conversation_id) difyConversationId = evt.conversation_id;
                 if (evt.message_id) difyMessageId = evt.message_id;
+                collectSources(evt);
                 if (evt.event === 'message' && evt.answer) {
                   answer += evt.answer;
                 }
@@ -136,6 +144,7 @@ export class AiController {
           answer,
           difyConversationId,
           difyMessageId,
+          retrieverResources,
           Date.now() - started,
         );
         res.write(
@@ -144,6 +153,7 @@ export class AiController {
             conversationId: conv.id,
             messageId: localMessageId,
             difyMessageId,
+            sources: this.aiService.formatSources(retrieverResources),
           })}\n\n`,
         );
         res.end();

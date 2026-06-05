@@ -83,6 +83,7 @@ export function sendChatStream({ question, conversationId, scene }, callbacks) {
             conversationId: evt.conversationId,
             messageId: evt.messageId,
             difyMessageId: evt.difyMessageId,
+            sources: evt.sources || [],
           });
         } else if (evt.type === 'error') {
           (onError || (() => {}))(evt.message || '智能客服繁忙，请稍后再试或转人工');

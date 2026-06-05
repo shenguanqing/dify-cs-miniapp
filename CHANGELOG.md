@@ -13,6 +13,8 @@
 | 小程序深色主题配置 | manifest.json, pages.json, theme.json | 原生导航栏、状态栏、页面背景跟随系统深色模式 |
 | iOS 风格深色 UI | App.vue, chat.vue | 黑灰底色，用户气泡、AI 头像和发送按钮保留蓝色渐变 |
 | Markdown 代码块修复 | markdown.js | 修复代码块占位符泄漏为 `_CODEBLOCK..._` 的问题 |
+| 引用来源修复 | dify.client.ts, ai.service.ts, ai.controller.ts, chat.js | 兼容 Dify 多种结构提取检索资源，流式模式补齐来源 |
+| 引用来源 UI 重做 | chat.vue | 改为文件卡片样式，同名来源去重 |
 | 设计规范同步 | UI_DESIGN_SPECIFICATION.md | 更新深色模式色彩、气泡与组件规范 |
 
 ### UI
@@ -29,6 +31,15 @@
 
 - 修复代码块渲染异常：避免代码块被显示成 `_CODEBLOCK..._` 中间占位符
 - 将代码块占位符从双下划线格式改为 `@@CODE_BLOCK_n@@`，避免被加粗/斜体等行内 Markdown 规则误伤
+- 排版间距参照 Typora 调整：行高 1.5，段落/代码块/引用块/表格/图片统一 16rpx，标题 28/14rpx，列表项 4rpx
+- 修复空行间距叠加：去掉空行产生的 `<br/>`，块级元素之间靠自身 margin 控制节奏
+
+### 引用来源
+
+- 修复引用来源不显示：`extractRetrieverResources` 兼容 Dify Chat/Workflow/Chatflow 多种数据结构（7 个候选路径）
+- 流式模式补齐来源：SSE 每个事件收集检索资源，落库并通过 done 事件下发前端
+- `formatSources` 统一格式化，兼容 `document_name`/`title`/`metadata.document_name` 等多种字段名，历史消息也带上来源
+- UI 重做：从列表式改为文件卡片样式（浅灰底 + 圆角），同名来源去重只显示一个
 
 ### 文档
 
