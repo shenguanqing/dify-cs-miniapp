@@ -1376,16 +1376,16 @@ page {
 /* ===== 深色模式（跟随系统） ===== */
 @media (prefers-color-scheme: dark) {
   page {
-    --color-primary: #3b82f6;
-    --color-primary-light: #60a5fa;
-    --color-bg: #0f172a;
-    --color-bg-secondary: #1e293b;
-    --color-bg-tertiary: #334155;
-    --color-text-primary: #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-text-tertiary: #64748b;
-    --color-border: #30363d;
-    --color-border-light: #21262d;
+    --color-primary: #2563eb;
+    --color-primary-light: #3b82f6;
+    --color-bg: #000000;
+    --color-bg-secondary: #1c1c1e;
+    --color-bg-tertiary: #2c2c2e;
+    --color-text-primary: #f5f5f7;
+    --color-text-secondary: #98989d;
+    --color-text-tertiary: #636366;
+    --color-border: #38383a;
+    --color-border-light: #2c2c2e;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
@@ -1393,52 +1393,68 @@ page {
   }
 
   /* 代码块 */
-  .bubble-markdown .code-block { background: #161b22; border-color: #30363d; }
-  .bubble-markdown .code-content { color: #e6edf3; }
-  .bubble-markdown .code-header { background: #1c2128; border-bottom-color: #30363d; }
-  .bubble-markdown .code-lang { color: #8b949e; }
+  .bubble-markdown .code-block { background: #1c1c1e; border-color: #38383a; }
+  .bubble-markdown .code-content { color: #f5f5f7; }
+  .bubble-markdown .code-header { background: #2c2c2e; border-bottom-color: #38383a; }
+  .bubble-markdown .code-lang { color: #98989d; }
 
   /* 行内代码 */
   .bubble-markdown .inline-code {
-    background: #262c36;
-    color: #f0883e;
-    border-color: #30363d;
+    background: #2c2c2e;
+    color: #f5f5f7;
+    border-color: #38383a;
   }
 
   /* 引用块 */
   .bubble-markdown .blockquote {
-    background: rgba(56, 139, 253, 0.1);
-    border-left-color: #388bfd;
+    background: #1c1c1e;
+    border-left-color: #636366;
   }
 
   /* 表格 */
-  .bubble-markdown .markdown-table { border-color: #30363d; }
-  .bubble-markdown .table-header-row { background: #161b22; }
-  .bubble-markdown .table-header { border-color: #30363d; }
-  .bubble-markdown .table-cell { border-color: #30363d; }
-  .bubble-markdown .table-row:hover .table-cell { background: #161b22; }
+  .bubble-markdown .markdown-table { border-color: #38383a; }
+  .bubble-markdown .table-header-row { background: #1c1c1e; }
+  .bubble-markdown .table-header { border-color: #38383a; }
+  .bubble-markdown .table-cell { border-color: #38383a; }
+  .bubble-markdown .table-row:hover .table-cell { background: #1c1c1e; }
 
-  /* 语法高亮（GitHub Dark） */
-  .bubble-markdown .hl-keyword { color: #ff7b72; }
-  .bubble-markdown .hl-builtin { color: #79c0ff; }
-  .bubble-markdown .hl-string { color: #a5d6ff; }
-  .bubble-markdown .hl-comment { color: #8b949e; }
-  .bubble-markdown .hl-number { color: #79c0ff; }
-  .bubble-markdown .hl-operator { color: #ff7b72; }
-  .bubble-markdown .hl-punctuation { color: #e6edf3; }
+  /* 语法高亮（iOS 深色灰阶） */
+  .bubble-markdown .hl-keyword { color: #ffffff; }
+  .bubble-markdown .hl-builtin { color: #d1d1d6; }
+  .bubble-markdown .hl-string { color: #c7c7cc; }
+  .bubble-markdown .hl-comment { color: #8e8e93; }
+  .bubble-markdown .hl-number { color: #d1d1d6; }
+  .bubble-markdown .hl-operator { color: #ffffff; }
+  .bubble-markdown .hl-punctuation { color: #f5f5f7; }
 
   /* LaTeX */
-  .bubble-markdown .latex-inline { background: rgba(56, 139, 253, 0.15); }
-  .bubble-markdown .latex-block { background: #161b22; }
+  .bubble-markdown .latex-inline { background: #2c2c2e; }
+  .bubble-markdown .latex-block { background: #1c1c1e; }
 
   /* 任务列表 */
-  .bubble-markdown .task-checkbox { border-color: #30363d; }
+  .bubble-markdown .task-checkbox { border-color: #38383a; }
 
   /* 用户气泡 */
-  .bubble-sent { background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); }
+  .bubble-sent,
+  .ai-avatar,
+  .send-btn.active {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  }
+
+  .bubble-received {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border-color: var(--color-border-light);
+    box-shadow: none;
+  }
+
+  .input-wrap:focus-within {
+    border-color: #636366;
+    box-shadow: 0 0 0 4rpx rgba(255, 255, 255, 0.08);
+  }
 
   /* 反馈按钮 */
-  .action-btn { border-color: #30363d; background: #161b22; }
+  .action-btn { border-color: #38383a; background: #1c1c1e; }
   .action-liked { background: #0d3117; border-color: #238636; }
   .action-disliked { background: #3d1117; border-color: #da3633; }
 }

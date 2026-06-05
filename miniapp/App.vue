@@ -35,6 +35,35 @@ page {
   -webkit-tap-highlight-color: transparent;
 }
 
+@media (prefers-color-scheme: dark) {
+  page {
+    color: #f5f5f7;
+    background-color: #000000;
+    color-scheme: dark;
+  }
+
+  .uni-modal__title {
+    color: #f5f5f7 !important;
+  }
+
+  .uni-modal {
+    background-color: #1c1c1e !important;
+  }
+
+  .uni-modal__bd {
+    color: #98989d !important;
+  }
+
+  .uni-modal__ft {
+    border-top-color: #38383a !important;
+  }
+
+  .uni-modal__btn {
+    border-color: #38383a !important;
+    color: #f5f5f7 !important;
+  }
+}
+
 /* ===== 全局组件样式 ===== */
 view {
   box-sizing: border-box;

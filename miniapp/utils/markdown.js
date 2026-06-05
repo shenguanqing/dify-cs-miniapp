@@ -6,15 +6,19 @@
 import { highlightCode } from './highlight';
 import { latexToHtml } from './latex';
 
+function getCodeBlockPlaceholder(index) {
+  return `@@CODE_BLOCK_${index}@@`;
+}
+
 // 转义 HTML 特殊字符
 function escapeHtml(text) {
   if (!text) return '';
   // 先处理占位符，避免被转义
   let result = text;
   const placeholders = [];
-  result = result.replace(/(__CODE_BLOCK_\d+__)/g, (match) => {
+  result = result.replace(/(@@CODE_BLOCK_\d+@@)/g, (match) => {
     placeholders.push(match);
-    return `__PLACEHOLDER_${placeholders.length - 1}__`;
+    return `@@PLACEHOLDER_${placeholders.length - 1}@@`;
   });
 
   result = result
@@ -26,7 +30,7 @@ function escapeHtml(text) {
 
   // 还原占位符
   placeholders.forEach((ph, idx) => {
-    result = result.replace(`__PLACEHOLDER_${idx}__`, ph);
+    result = result.replace(`@@PLACEHOLDER_${idx}@@`, ph);
   });
 
   return result;
@@ -94,7 +98,7 @@ function parseCodeBlock(text) {
 
   // 替换代码块为占位符
   codeBlocks.forEach((block, index) => {
-    const placeholder = `__CODE_BLOCK_${index}__`;
+    const placeholder = getCodeBlockPlaceholder(index);
     result = result.replace(block.full, placeholder);
   });
 
@@ -105,7 +109,7 @@ function parseCodeBlock(text) {
 function restoreCodeBlocks(html, codeBlocks) {
   let result = html;
   codeBlocks.forEach((block, index) => {
-    const placeholder = `__CODE_BLOCK_${index}__`;
+    const placeholder = getCodeBlockPlaceholder(index);
     const highlightedCode = highlightCode(block.code, block.lang);
     const langLabel = block.lang ? `<div class="code-header"><span class="code-lang">${block.lang}</span></div>` : '';
     const codeHtml = `<pre class="code-block">${langLabel}<code class="code-content">${highlightedCode}</code></pre>`;
@@ -126,7 +130,7 @@ function parseBlock(text) {
     const trimmedLine = lines[i].trim();
 
     // 跳过代码块占位符（已经处理过）
-    if (trimmedLine.match(/^__CODE_BLOCK_\d+__$/)) {
+    if (trimmedLine.match(/^@@CODE_BLOCK_\d+@@$/)) {
       html += trimmedLine;
       i++;
       continue;

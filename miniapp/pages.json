@@ -4,20 +4,20 @@
       "path": "pages/chat/chat",
       "style": {
         "navigationBarTitleText": "智能客服",
-        "navigationBarBackgroundColor": "#ffffff",
-        "navigationBarTextStyle": "black",
+        "navigationBarBackgroundColor": "@navBgColor",
+        "navigationBarTextStyle": "@navTxtStyle",
         "enablePullDownRefresh": false,
-        "backgroundColor": "#ffffff",
-        "backgroundTextStyle": "dark"
+        "backgroundColor": "@bgColor",
+        "backgroundTextStyle": "@bgTxtStyle"
       }
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "black",
+    "navigationBarTextStyle": "@navTxtStyle",
     "navigationBarTitleText": "智能客服",
-    "navigationBarBackgroundColor": "#ffffff",
-    "backgroundColor": "#ffffff",
-    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "@navBgColor",
+    "backgroundColor": "@bgColor",
+    "backgroundTextStyle": "@bgTxtStyle",
     "navigationBarFontSize": "17px",
     "navigationBarTitleWidth": "200px",
     "mp-weixin": {
