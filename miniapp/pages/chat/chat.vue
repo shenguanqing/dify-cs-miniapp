@@ -22,7 +22,7 @@
         <text class="welcome-desc">我是您的智能助手，随时为您服务</text>
       </view>
 
-      <view v-for="(m, idx) in messages" :key="idx" class="msg-row">
+      <view v-for="(m, idx) in messages" :key="idx" class="msg-row" :class="m.role === 'user' ? 'msg-enter-right' : 'msg-enter-left'">
         <!-- 用户气泡（右侧）-->
         <view v-if="m.role === 'user'" class="row row-right">
           <view class="bubble bubble-sent">
@@ -35,11 +35,11 @@
           <view class="ai-avatar">
             <text class="avatar-text">AI</text>
           </view>
-          <view class="bubble bubble-received">
+          <view class="bubble bubble-received" :class="{ 'bubble-done': !m.typing && m._justFinished }">
             <!-- 打字中显示纯文本 -->
             <text v-if="m.typing" class="bubble-text">{{ m.content }}</text>
             <!-- 打字完成后显示 Markdown 渲染 -->
-            <rich-text v-else class="bubble-markdown" :nodes="m.renderedContent" @itemclick="handleItemClick"></rich-text>
+            <rich-text v-if="!m.typing" class="bubble-markdown" :nodes="m.renderedContent"></rich-text>
             <view v-if="m.typing" class="typing-indicator">
               <view class="typing-dot"></view>
               <view class="typing-dot"></view>
@@ -67,7 +67,6 @@
         <!-- 操作区 -->
         <view v-if="m.role === 'ai' && !m.typing && m.content" class="actions-row">
           <view class="action-btn" @tap="copyText(m.content)">
-            <text class="action-icon">📋</text>
             <text class="action-text">复制</text>
           </view>
           <view
@@ -113,7 +112,7 @@
         </view>
         <view
           class="send-btn"
-          :class="{ active: inputText.trim() && !sending }"
+          :class="{ active: inputText.trim() && !sending, 'sending-pulse': sendPulse }"
           @tap="send"
         >
           <text class="send-icon">↑</text>
@@ -151,6 +150,7 @@ export default {
       scene: 'default',
       scrollTop: 0,
       loadingHistory: false,
+      sendPulse: false,
     };
   },
   async onLoad() {
@@ -206,15 +206,17 @@ export default {
           }
           // AI 回答（直接渲染 Markdown，无打字动画）
           if (item.answer) {
-            msgs.push({
+            const aiMsg = {
               role: 'ai',
               content: item.answer,
-              renderedContent: this.renderMarkdown(item.answer),
+              renderedContent: '',
               typing: false,
               sources: [],
               feedback: item.feedback || 0,
               messageId: item.id || '',
-            });
+            };
+            aiMsg.renderedContent = this.renderMarkdown(item.answer);
+            msgs.push(aiMsg);
           }
         });
 
@@ -245,14 +247,16 @@ export default {
 
     renderMarkdown(content) {
       if (!content) return '';
-
-      // 总是调用 markdownToHtml，它会自动处理纯文本
       return markdownToHtml(content);
     },
 
     async send() {
       const text = this.inputText.trim();
       if (!text || this.sending) return;
+
+      // 发送按钮弹跳
+      this.sendPulse = true;
+      setTimeout(() => { this.sendPulse = false; }, 250);
 
       this.messages.push({ role: 'user', content: text });
       this.inputText = '';
@@ -294,8 +298,10 @@ export default {
         aiMsg.messageId = data.messageId;
         aiMsg.sources = data.sources || [];
         await this.typeWriter(aiMsg, data.answer || '（暂无回答）');
-        // 打字完成后，渲染 Markdown
+        // 打字完成后，渲染 Markdown 并触发完成动画
         aiMsg.renderedContent = this.renderMarkdown(aiMsg.content);
+        aiMsg._justFinished = true;
+        this.$forceUpdate();
       } catch (e) {
         aiMsg.typing = false;
         aiMsg.content = e.message || '智能客服繁忙，请稍后再试或转人工';
@@ -325,6 +331,8 @@ export default {
               aiMsg.messageId = data.difyMessageId || '';
               aiMsg.typing = false;
               aiMsg.renderedContent = this.renderMarkdown(aiMsg.content || '（暂无回答）');
+              aiMsg._justFinished = true;
+              this.$forceUpdate();
               this.sending = false;
               this.scrollToBottom();
               resolve();
@@ -368,9 +376,10 @@ export default {
     },
 
     handleItemClick(e) {
-      // 处理 rich-text 中的点击事件
       const node = e.detail.node;
-      if (node && node.name === 'img' && node.attrs && node.attrs.src) {
+      if (!node || !node.attrs) return;
+      // 图片预览
+      if (node.name === 'img' && node.attrs.src) {
         this.previewImage(node.attrs.src);
       }
     },
@@ -467,39 +476,6 @@ page {
   overflow: hidden;
 }
 
-/* 深色模式（跟随系统） */
-@media (prefers-color-scheme: dark) {
-  page {
-    --color-primary: #3b82f6;
-    --color-primary-light: #60a5fa;
-    --color-bg: #0f172a;
-    --color-bg-secondary: #1e293b;
-    --color-bg-tertiary: #334155;
-    --color-text-primary: #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-text-tertiary: #64748b;
-    --color-border: #334155;
-    --color-border-light: #1e293b;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-    color-scheme: dark;
-  }
-
-  .bubble-markdown .code-block { background: #010409; }
-  .bubble-markdown .code-block .code-content { color: #c9d1d9; }
-  .bubble-markdown .hl-keyword { color: #ff7b72; }
-  .bubble-markdown .hl-builtin { color: #79c0ff; }
-  .bubble-markdown .hl-string { color: #a5d6ff; }
-  .bubble-markdown .hl-comment { color: #8b949e; }
-  .bubble-markdown .hl-number { color: #ffa657; }
-  .bubble-markdown .hl-operator { color: #79c0ff; }
-  .bubble-markdown .hl-punctuation { color: #8b949e; }
-  .bubble-markdown .latex-inline { background: rgba(59, 130, 246, 0.1); }
-  .bubble-markdown .latex-block { background: var(--color-bg-secondary); }
-  .bubble-markdown .task-checkbox { border-color: var(--color-border); }
-  .bubble-sent { background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); }
-}
 
 .chat-page {
   display: flex;
@@ -815,6 +791,22 @@ page {
   border-color: #fecaca;
 }
 
+/* ===== 代码块复制按钮 ===== */
+/* ===== 代码块头部（语言标签 + 复制按钮） ===== */
+.bubble-markdown .code-header {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 24rpx;
+  background: #eaeef2;
+  border-bottom: 1rpx solid #d0d7de;
+}
+
+.bubble-markdown .code-lang {
+  font-size: 22rpx;
+  color: #57606a;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+}
+
 /* ===== 底部区域 ===== */
 .bottom-area {
   flex-shrink: 0;
@@ -988,30 +980,34 @@ page {
 
 /* 行内代码 */
 .bubble-markdown .inline-code {
-  background: rgba(0, 0, 0, 0.06);
+  background: #eff1f3;
   padding: 4rpx 10rpx;
   border-radius: 6rpx;
   font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
   font-size: 26rpx;
-  color: #e11d48;
+  color: #d63384;
+  border: 1rpx solid #e2e8f0;
 }
 
 /* 代码块 */
 .bubble-markdown .code-block {
-  background: #1e293b;
-  border-radius: var(--radius-md);
-  padding: 20rpx 24rpx;
-  margin: 16rpx 0;
-  overflow-x: auto;
+  background: #f6f8fa;
+  border-radius: 12rpx 12rpx 0 0;
+  margin: 16rpx 0 0 0;
+  overflow: hidden;
+  border: 2rpx solid #d0d7de;
+  border-bottom: none;
 }
 
-.bubble-markdown .code-block .code-content {
+.bubble-markdown .code-content {
+  display: block;
   font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
   font-size: 24rpx;
-  color: #e2e8f0;
+  color: #24292f;
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;
+  padding: 16rpx 24rpx;
 }
 
 /* 列表 */
@@ -1084,9 +1080,9 @@ page {
 /* 引用 */
 .bubble-markdown .blockquote {
   border-left: 6rpx solid var(--color-primary);
-  padding: 12rpx 20rpx;
+  padding: 16rpx 20rpx;
   margin: 16rpx 0;
-  background: rgba(37, 99, 235, 0.05);
+  background: #f0f6ff;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   color: var(--color-text-secondary);
   font-style: italic;
@@ -1110,11 +1106,14 @@ page {
   margin: 16rpx 0;
   font-size: 26rpx;
   overflow-x: auto;
+  border: 2rpx solid #d0d7de;
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .bubble-markdown .table-header-row {
   display: flex;
-  background: var(--color-bg-tertiary);
+  background: #f6f8fa;
 }
 
 .bubble-markdown .table-header {
@@ -1123,8 +1122,13 @@ page {
   text-align: left;
   font-weight: 700;
   color: var(--color-text-primary);
-  border: 2rpx solid var(--color-border);
+  border-right: 2rpx solid #d0d7de;
+  border-bottom: 2rpx solid #d0d7de;
   white-space: nowrap;
+}
+
+.bubble-markdown .table-header:last-child {
+  border-right: none;
 }
 
 .bubble-markdown .table-body {
@@ -1137,46 +1141,55 @@ page {
 }
 
 .bubble-markdown .table-row:hover .table-cell {
-  background: var(--color-bg-secondary);
+  background: #f6f8fa;
 }
 
 .bubble-markdown .table-cell {
   flex: 1;
   padding: 14rpx 20rpx;
-  border: 2rpx solid var(--color-border);
+  border-right: 2rpx solid #d0d7de;
+  border-bottom: 2rpx solid #d0d7de;
   color: var(--color-text-secondary);
   vertical-align: top;
 }
 
-/* ===== 语法高亮样式 ===== */
+.bubble-markdown .table-cell:last-child {
+  border-right: none;
+}
+
+.bubble-markdown .table-row:last-child .table-cell {
+  border-bottom: none;
+}
+
+/* ===== 语法高亮样式（浅色模式 - GitHub Light） ===== */
 .bubble-markdown .hl-keyword {
-  color: #c678dd;
+  color: #cf222e;
   font-weight: 600;
 }
 
 .bubble-markdown .hl-builtin {
-  color: #61afef;
+  color: #0550ae;
 }
 
 .bubble-markdown .hl-string {
-  color: #98c379;
+  color: #0a3069;
 }
 
 .bubble-markdown .hl-comment {
-  color: #5c6370;
+  color: #6e7781;
   font-style: italic;
 }
 
 .bubble-markdown .hl-number {
-  color: #d19a66;
+  color: #0550ae;
 }
 
 .bubble-markdown .hl-operator {
-  color: #56b6c2;
+  color: #cf222e;
 }
 
 .bubble-markdown .hl-punctuation {
-  color: #abb2bf;
+  color: #24292f;
 }
 
 /* ===== 任务列表样式 ===== */
@@ -1306,5 +1319,133 @@ page {
 .bubble-markdown .latex-text {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
   font-style: normal;
+}
+
+/* ===== 消息入场动画 ===== */
+@keyframes msg-enter-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(40rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes msg-enter-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bubble-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes send-btn-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+.msg-enter-right {
+  animation: msg-enter-from-right 0.3s ease-out both;
+}
+
+.msg-enter-left {
+  animation: msg-enter-from-left 0.3s ease-out both;
+}
+
+/* AI 回复完成时的轻微弹跳 */
+.bubble-done {
+  animation: bubble-pop 0.35s ease-out;
+}
+
+/* 发送按钮点击弹跳 */
+.send-btn.sending-pulse {
+  animation: send-btn-pulse 0.25s ease-out;
+}
+
+/* ===== 深色模式（跟随系统） ===== */
+@media (prefers-color-scheme: dark) {
+  page {
+    --color-primary: #3b82f6;
+    --color-primary-light: #60a5fa;
+    --color-bg: #0f172a;
+    --color-bg-secondary: #1e293b;
+    --color-bg-tertiary: #334155;
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #94a3b8;
+    --color-text-tertiary: #64748b;
+    --color-border: #30363d;
+    --color-border-light: #21262d;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+    color-scheme: dark;
+  }
+
+  /* 代码块 */
+  .bubble-markdown .code-block {
+    background: #161b22;
+    border-color: #30363d;
+  }
+  /* 代码块 */
+  .bubble-markdown .code-block { background: #161b22; border-color: #30363d; }
+  .bubble-markdown .code-content { color: #e6edf3; }
+  .bubble-markdown .code-header { background: #1c2128; border-bottom-color: #30363d; }
+  .bubble-markdown .code-lang { color: #8b949e; }
+
+  /* 行内代码 */
+  .bubble-markdown .inline-code {
+    background: #262c36;
+    color: #f0883e;
+    border-color: #30363d;
+  }
+
+  /* 引用块 */
+  .bubble-markdown .blockquote {
+    background: rgba(56, 139, 253, 0.1);
+    border-left-color: #388bfd;
+  }
+
+  /* 表格 */
+  .bubble-markdown .markdown-table { border-color: #30363d; }
+  .bubble-markdown .table-header-row { background: #161b22; }
+  .bubble-markdown .table-header { border-color: #30363d; }
+  .bubble-markdown .table-cell { border-color: #30363d; }
+  .bubble-markdown .table-row:hover .table-cell { background: #161b22; }
+
+  /* 语法高亮（GitHub Dark） */
+  .bubble-markdown .hl-keyword { color: #ff7b72; }
+  .bubble-markdown .hl-builtin { color: #79c0ff; }
+  .bubble-markdown .hl-string { color: #a5d6ff; }
+  .bubble-markdown .hl-comment { color: #8b949e; }
+  .bubble-markdown .hl-number { color: #79c0ff; }
+  .bubble-markdown .hl-operator { color: #ff7b72; }
+  .bubble-markdown .hl-punctuation { color: #e6edf3; }
+
+  /* LaTeX */
+  .bubble-markdown .latex-inline { background: rgba(56, 139, 253, 0.15); }
+  .bubble-markdown .latex-block { background: #161b22; }
+
+  /* 任务列表 */
+  .bubble-markdown .task-checkbox { border-color: #30363d; }
+
+  /* 用户气泡 */
+  .bubble-sent { background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); }
+
+  /* 反馈按钮 */
+  .action-btn { border-color: #30363d; background: #161b22; }
+  .action-liked { background: #0d3117; border-color: #238636; }
+  .action-disliked { background: #3d1117; border-color: #da3633; }
 }
 </style>

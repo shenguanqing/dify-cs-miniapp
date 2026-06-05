@@ -8,6 +8,8 @@
 
 ### 色彩系统
 
+#### 浅色模式（默认）
+
 | 类别 | 变量 | 取值 | 用途 |
 |------|------|------|------|
 | 主色 | `--color-primary` | `#2563eb` | 主要操作、强调 |
@@ -24,6 +26,36 @@
 | 错误 | `--color-error` | `#ef4444` | 负向反馈 |
 
 主色在重要元素上以渐变呈现：`linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)`。
+
+#### 深色模式
+
+跟随系统自动切换，通过 `manifest.json` 中 `mp-weixin.darkmode: true` 启用，样式通过 `@media (prefers-color-scheme: dark)` 媒体查询适配，无需手动切换。
+
+深色色彩变量：
+
+| 类别 | 变量 | 深色取值 | 用途 |
+|------|------|----------|------|
+| 主色 | `--color-primary` | `#3b82f6` | 主要操作 |
+| 主色（浅） | `--color-primary-light` | `#60a5fa` | 渐变终点 |
+| 背景 | `--color-bg` | `#0f172a` | 页面主背景 |
+| 次背景 | `--color-bg-secondary` | `#1e293b` | 次级容器 |
+| 三级背景 | `--color-bg-tertiary` | `#334155` | 标签、占位 |
+| 主文字 | `--color-text-primary` | `#f1f5f9` | 标题、正文 |
+| 次文字 | `--color-text-secondary` | `#94a3b8` | 辅助说明 |
+| 三级文字 | `--color-text-tertiary` | `#64748b` | 弱化信息 |
+| 边框 | `--color-border` | `#30363d` | 常规边框 |
+| 浅边框 | `--color-border-light` | `#21262d` | 分隔线 |
+
+深色模式下部分组件需要额外覆盖：
+
+- 代码块：背景 `#161b22`，头部 `#1c2128`，文字 `#e6edf3`，边框 `#30363d`（GitHub Dark 风格）
+- 行内代码：背景 `#262c36`，文字 `#f0883e`，边框 `#30363d`
+- 引用块：背景 `rgba(56, 139, 253, 0.1)`，左边框 `#388bfd`
+- 表格：边框 `#30363d`，表头背景 `#161b22`
+- 语法高亮：关键字 `#ff7b72`、内置函数 `#79c0ff`、字符串 `#a5d6ff`、注释 `#8b949e`、数字 `#79c0ff`、运算符 `#ff7b72`、标点 `#e6edf3`
+- 用户气泡：渐变调整为 `#1d4ed8` → `#2563eb`
+- 反馈按钮：点赞 `#0d3117` 底 `#238636` 边框，点踩 `#3d1117` 底 `#da3633` 边框
+- LaTeX 公式：行内背景 `rgba(56, 139, 253, 0.15)`，块级背景 `#161b22`
 
 ### 间距系统
 
@@ -57,7 +89,7 @@
 - 正文：`-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif`
 - 代码：`'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace`
 - 公式：`'Times New Roman', 'Georgia', serif`
-- 基础字号 28rpx，行高 1.5
+- 基础字号 28rpx，行高 1.6
 
 ---
 
@@ -68,7 +100,7 @@
 进入会话且无历史消息时展示，采用简洁居中布局，不使用卡片容器。
 
 - 垂直水平居中，`min-height` 约 50vh
-- 标题字号 48rpx、加粗、字间距 4rpx，文案亲切（如「您好！」）
+- 标题字号 52rpx、加粗、字间距 4rpx，文案亲切（如「您好！」）
 - 描述字号 30rpx、次文字色、行高 1.6
 - 避免冗余信息，文案不重复
 
@@ -105,22 +137,7 @@
 - 图标置于背景容器内，保持统一
 - 来源序号使用圆形背景，清晰可辨
 
-```css
-.sources-card {
-  background: var(--color-bg);
-  border: 1rpx solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-}
-
-.source-index {
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: var(--radius-full);
-  background: var(--color-bg-tertiary);
-}
-```
-
-### 操作按钮（复制 / 点赞 / 点踩）
+### 操作按钮（点赞 / 点踩）
 
 - 白底 + 细边框，点击缩放反馈
 - 反馈选中态用柔和色（点赞绿、点踩红）
@@ -143,62 +160,15 @@
 - 白底 + 边框，圆角 24rpx，高度 72rpx（与发送按钮对齐）
 - 聚焦时边框变主色并加蓝色光晕，传达可输入状态
 
-```css
-.input-wrap {
-  background: var(--color-bg);
-  border: 2rpx solid var(--color-border);
-  border-radius: 24rpx;
-  height: 72rpx;
-  transition: all 0.2s ease;
-}
-
-.input-wrap:focus-within {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 4rpx rgba(37, 99, 235, 0.1);
-}
-```
-
 ### 发送按钮
 
 - 圆角 24rpx，高度 72rpx，与输入框统一
 - 默认灰底，可发送时切换为主色渐变并轻微放大，点击收缩
 
-```css
-.send-btn {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 24rpx;
-  background: var(--color-bg-tertiary);
-  border: 2rpx solid transparent;
-  transition: all 0.2s ease;
-}
-
-.send-btn.active {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-  box-shadow: var(--shadow-md);
-  transform: scale(1.05);
-}
-
-.send-btn.active:active { transform: scale(0.95); }
-```
-
 ### 转人工栏
 
 - 单行简洁文字，不使用卡片样式，紧凑不占空间
 - 文字弱化、链接用主色
-
-```css
-.handoff-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  padding: 12rpx 24rpx;
-}
-
-.handoff-text { font-size: 24rpx; color: var(--color-text-tertiary); }
-.handoff-link { font-size: 24rpx; color: var(--color-primary); font-weight: 600; }
-```
 
 ---
 
@@ -216,10 +186,13 @@
 - 发送按钮状态切换 0.2s 过渡
 - 操作按钮反馈状态颜色渐变
 
-### 动画
+### 微交互动画
 
-- 统一动画时长 0.2s
-- 打字动画使用 `transform` 保证流畅
+**消息入场**：用户消息从右侧滑入（translateX 40rpx → 0），AI 消息从左侧滑入（translateX -40rpx → 0），0.3s ease-out，`animation-fill-mode: both`。
+
+**发送按钮弹跳**：点击发送时缩小到 0.88 再回弹到 1（0.25s ease-out），仅在可发送状态（active）下触发。
+
+**AI 回复完成**：气泡轻微放大到 1.04 再回弹（0.35s ease-out），通过 `_justFinished` 标记触发，`$forceUpdate` 确保视图更新。
 
 ---
 
@@ -235,92 +208,20 @@
 - 隐藏滚动条
 - 平滑滚动，新消息自动滚动到底部
 
+### Markdown 渲染
+
+- `rich-text` 组件只能渲染标准 HTML 标签（`div`、`p`、`span`、`strong`、`em`、`del`、`ul`、`ol`、`li`、`table` 等），不能使用 `view`/`text` 等小程序组件标签
+- 样式统一使用 class 选择器（避免页面级 style 的标签选择器警告）
+- `@media (prefers-color-scheme: dark)` 块必须放在 CSS 文件末尾，确保深色样式优先级最高
+
 ---
 
 ## 设计原则
 
 1. **清晰的视觉层次**：消息内容最突出，辅助信息适度弱化，操作按钮不抢焦点。
 2. **一致的设计语言**：色彩、间距、圆角、动画时长统一。
-3. **舒适的阅读体验**：充足留白、行高 1.5、清晰文字层次、柔和配色。
+3. **舒适的阅读体验**：充足留白、行高 1.6、清晰文字层次、柔和配色。
 4. **生动的交互反馈**：每个操作都有视觉反馈，状态变化平滑，动画不干扰操作。
-
----
-
-## 技术实现要点
-
-### CSS 变量
-
-通过 CSS 变量集中管理设计令牌，便于维护与主题扩展：
-
-```css
-page {
-  --color-primary: #2563eb;
-  --color-primary-light: #3b82f6;
-  --color-bg: #ffffff;
-  --color-bg-secondary: #f8fafc;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --radius-sm: 8rpx;
-  /* ... */
-}
-```
-
-### 渐变与阴影
-
-```css
-background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-```
-
-### 过渡动画
-
-```css
-transition: all 0.2s ease;
-transition: border-color 0.2s ease;
-transition: transform 0.2s ease;
-```
-
-### Markdown 渲染注意事项
-
-`rich-text` 组件只能渲染标准 HTML 标签（`div`、`p`、`span`、`strong`、`em`、`del`、`ul`、`ol`、`li`、`table` 等），不能使用 `view`/`text` 等小程序组件标签。样式统一使用 class 选择器（避免页面级 style 的标签选择器警告），元素本身使用标准 HTML 标签以保证 `rich-text` 正确渲染。
-
----
-
-## 深色模式
-
-深色模式跟随系统自动切换，通过 `manifest.json` 中 `mp-weixin.darkmode: true` 启用，样式通过 `@media (prefers-color-scheme: dark)` 媒体查询适配，无需手动切换。
-
-### 启用方式
-
-manifest.json 的 mp-weixin 节点添加 `"darkmode": true`，pages.json 的 globalStyle 中同样添加 `mp-weixin.darkmode: true`。框架自动处理导航栏和页面背景的深色适配。
-
-### 深色模式色彩变量
-
-| 类别 | 变量 | 深色取值 | 用途 |
-|------|------|----------|------|
-| 主色 | `--color-primary` | `#3b82f6` | 主要操作 |
-| 主色（浅） | `--color-primary-light` | `#60a5fa` | 渐变终点 |
-| 背景 | `--color-bg` | `#0f172a` | 页面主背景 |
-| 次背景 | `--color-bg-secondary` | `#1e293b` | 次级容器 |
-| 三级背景 | `--color-bg-tertiary` | `#334155` | 标签、占位 |
-| 主文字 | `--color-text-primary` | `#f1f5f9` | 标题、正文 |
-| 次文字 | `--color-text-secondary` | `#94a3b8` | 辅助说明 |
-| 三级文字 | `--color-text-tertiary` | `#64748b` | 弱化信息 |
-| 边框 | `--color-border` | `#334155` | 常规边框 |
-| 浅边框 | `--color-border-light` | `#1e293b` | 分隔线 |
-
-### 深色模式特殊处理
-
-- 代码块：背景加深至 `#010409`，文字 `#c9d1d9`（GitHub Dark 风格）
-- 语法高亮：关键字 `#ff7b72`、内置函数 `#79c0ff`、字符串 `#a5d6ff`、注释 `#8b949e`、数字 `#ffa657`
-- 用户气泡：渐变调整为 `#1d4ed8` → `#2563eb`，保证对比度
-- LaTeX 公式：行内背景调为 `rgba(59, 130, 246, 0.1)`
-- 图片容器：背景使用 `--color-bg-tertiary`
-
-### 切换机制
-
-- 跟随系统深色模式自动切换，无需用户手动操作
-- 样式通过 `@media (prefers-color-scheme: dark)` 媒体查询在 CSS 层面覆盖
-- 框架自动处理导航栏背景、文字颜色和页面背景
 
 ---
 
@@ -330,9 +231,5 @@ manifest.json 的 mp-weixin 节点添加 `"darkmode": true`，pages.json 的 glo
 - **Notion**（https://notion.so）— 清晰、舒适、有层次
 - **Stripe**（https://stripe.com）— 精致、现代、有质感
 - **Vercel**（https://vercel.com）— 简约、大气、专业
-
----
-
-**设计参考**：Linear + Notion + Stripe + Vercel
 
 版本变更记录见 [CHANGELOG.md](./CHANGELOG.md)。

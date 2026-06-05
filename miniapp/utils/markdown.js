@@ -107,7 +107,8 @@ function restoreCodeBlocks(html, codeBlocks) {
   codeBlocks.forEach((block, index) => {
     const placeholder = `__CODE_BLOCK_${index}__`;
     const highlightedCode = highlightCode(block.code, block.lang);
-    const codeHtml = `<pre class="code-block"><code class="code-content">${highlightedCode}</code></pre>`;
+    const langLabel = block.lang ? `<div class="code-header"><span class="code-lang">${block.lang}</span></div>` : '';
+    const codeHtml = `<pre class="code-block">${langLabel}<code class="code-content">${highlightedCode}</code></pre>`;
     result = result.split(placeholder).join(codeHtml);
   });
   return result;
