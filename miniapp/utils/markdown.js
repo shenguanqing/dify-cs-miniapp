@@ -220,10 +220,8 @@ function parseBlock(text) {
       else if (trimmedLine) {
         html += `<p class="paragraph">${parseInline(trimmedLine)}</p>`;
       }
-      // 空行
-      else {
-        html += '<br/>';
-      }
+      // 空行：块级元素之间靠自身 margin 控制间距，空行不再额外产生间距
+      // （保留 else 分支但不输出，避免空行叠加导致间距过大）
     }
 
     i++;

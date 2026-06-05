@@ -913,13 +913,13 @@ page {
 /* ===== Markdown 样式 ===== */
 .bubble-markdown {
   display: block;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 /* 段落 */
 .bubble-markdown .paragraph {
   margin: 0 0 16rpx 0;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .bubble-markdown .paragraph:last-child {
@@ -929,7 +929,7 @@ page {
 /* 标题 */
 .bubble-markdown .heading {
   font-weight: 700;
-  margin: 24rpx 0 12rpx 0;
+  margin: 28rpx 0 14rpx 0;
   line-height: 1.3;
 }
 
@@ -1012,7 +1012,7 @@ page {
 /* 列表 */
 .bubble-markdown .unordered-list,
 .bubble-markdown .ordered-list {
-  margin: 12rpx 0;
+  margin: 8rpx 0;
   padding-left: 32rpx;
 }
 
@@ -1025,7 +1025,7 @@ page {
 }
 
 .bubble-markdown .list-item {
-  margin: 8rpx 0;
+  margin: 4rpx 0;
   line-height: 1.5;
 }
 
@@ -1042,7 +1042,7 @@ page {
 
 /* 图片 */
 .bubble-markdown .image-container {
-  margin: 12rpx 0;
+  margin: 16rpx 0;
   background: var(--color-bg-tertiary);
   border-radius: var(--radius-md);
   min-height: 80rpx;
@@ -1065,7 +1065,7 @@ page {
 
 /* 换行 */
 .bubble-markdown .line-break {
-  height: 16rpx;
+  height: 12rpx;
 }
 
 /* 分隔线 */
@@ -1073,7 +1073,7 @@ page {
   border: none;
   height: 2rpx;
   background: var(--color-border);
-  margin: 24rpx 0;
+  margin: 20rpx 0;
 }
 
 /* 引用 */
@@ -1195,14 +1195,14 @@ page {
 .bubble-markdown .task-list {
   list-style: none;
   padding-left: 8rpx;
-  margin: 12rpx 0;
+  margin: 8rpx 0;
 }
 
 .bubble-markdown .task-item {
   display: flex;
   align-items: flex-start;
   gap: 12rpx;
-  margin: 8rpx 0;
+  margin: 4rpx 0;
   line-height: 1.5;
 }
 
