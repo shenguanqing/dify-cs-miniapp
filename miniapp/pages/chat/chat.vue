@@ -30,7 +30,7 @@
           </view>
         </view>
 
-        <!-- AI 气泡（左侧）-->
+        <!-- 回复气泡（左侧）-->
         <view v-else class="row row-left">
           <view class="ai-avatar">
             <text class="avatar-text">AI</text>
@@ -45,15 +45,14 @@
               <view class="typing-dot"></view>
               <view class="typing-dot"></view>
             </view>
-          </view>
-        </view>
-
-        <!-- 引用来源 -->
-        <view v-if="m.role === 'ai' && !m.typing && uniqueSources(m.sources).length" class="sources-row">
-          <text class="sources-label">引用</text>
-          <view class="source-list">
-            <view v-for="(name, i) in uniqueSources(m.sources)" :key="i" class="source-file">
-              <text class="source-file-name">{{ name }}</text>
+            <!-- 引用来源：作为气泡内容的一部分，置于底部 -->
+            <view v-if="!m.typing && uniqueSources(m.sources).length" class="sources-block">
+              <text class="sources-label">引用</text>
+              <view class="source-list">
+                <view v-for="(name, i) in uniqueSources(m.sources)" :key="i" class="source-file">
+                  <text class="source-file-name">{{ name }}</text>
+                </view>
+              </view>
             </view>
           </view>
         </view>
@@ -68,14 +67,14 @@
             :class="{ 'action-liked': m.feedback === 1 }"
             @tap="feedback(m, 1)"
           >
-            <text class="action-icon">{{ m.feedback === 1 ? '👍' : '👍' }}</text>
+            <text class="action-icon">👍</text>
           </view>
           <view
             class="action-btn"
             :class="{ 'action-disliked': m.feedback === -1 }"
             @tap="feedback(m, -1)"
           >
-            <text class="action-icon">{{ m.feedback === -1 ? '👎' : '👎' }}</text>
+            <text class="action-icon">👎</text>
           </view>
         </view>
       </view>
@@ -690,10 +689,11 @@ page {
   }
 }
 
-/* ===== 引用来源卡片 ===== */
-.sources-row {
-  max-width: 84%;
-  padding: 8rpx 16rpx 8rpx 84rpx;
+/* ===== 引用来源（气泡内底部） ===== */
+.sources-block {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid var(--color-border);
 }
 
 .sources-label {
@@ -714,7 +714,7 @@ page {
   display: flex;
   align-items: center;
   padding: 10rpx 16rpx;
-  background: var(--color-bg-secondary);
+  background: var(--color-bg);
   border: 1rpx solid var(--color-border);
   border-radius: 12rpx;
   max-width: 100%;
