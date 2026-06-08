@@ -54,7 +54,15 @@ function parseInline(text) {
   });
 
   // 行内代码（最先处理，避免被其他规则影响）
-  html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+  // 支持多反引号定界（如 `` `code` ``），闭合反引号数量需与开定界一致；
+  // 若内容首尾各有一个空格则各去掉一个（CommonMark 规则）
+  html = html.replace(/(`+)(.+?)\1/g, (m, ticks, code) => {
+    let c = code;
+    if (c.length > 1 && c.startsWith(' ') && c.endsWith(' ')) {
+      c = c.slice(1, -1);
+    }
+    return `<code class="inline-code">${c}</code>`;
+  });
 
   // 加粗
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="bold">$1</strong>');
@@ -80,15 +88,17 @@ function parseInline(text) {
 }
 
 // 解析代码块
+// 支持 3 个及以上反引号的围栏（CommonMark）：闭合围栏的反引号数量需与开围栏一致，
+// 这样以 4 个反引号包裹、内部含 ``` 代码块的「代码演示」也能正确解析。
 function parseCodeBlock(text) {
-  const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g;
+  const codeBlockRegex = /(`{3,})([^\n`]*)\n?([\s\S]*?)\1/g;
   let result = text;
   const codeBlocks = [];
   let match;
 
   while ((match = codeBlockRegex.exec(text)) !== null) {
-    const lang = match[1] || '';
-    const code = match[2].trim();
+    const lang = (match[2] || '').trim().split(/\s+/)[0] || '';
+    const code = match[3].replace(/\n$/, '');
     codeBlocks.push({
       full: match[0],
       lang: lang,
@@ -96,7 +106,7 @@ function parseCodeBlock(text) {
     });
   }
 
-  // 替换代码块为占位符
+  // 替换代码块为占位符（按出现顺序逐个替换，避免重复代码块互相覆盖）
   codeBlocks.forEach((block, index) => {
     const placeholder = getCodeBlockPlaceholder(index);
     result = result.replace(block.full, placeholder);
@@ -323,6 +333,56 @@ export function markdownToHtml(markdown) {
   html = restoreCodeBlocks(html, codeBlocks);
 
   return html;
+}
+
+/**
+ * 将 Markdown 拆分为「文本」与「代码块」两类片段（保持原始顺序）。
+ * 代码块单独返回，便于前端用原生组件渲染并附带「复制」按钮
+ * （rich-text 内部节点无法绑定点击事件，无法直接做复制按钮）。
+ *
+ * @param {string} markdown - Markdown 文本
+ * @returns {Array<{type:'text'|'code', html:string, lang?:string, code?:string}>}
+ *   - type='text'：html 为 rich-text 可渲染的 HTML 字符串
+ *   - type='code'：html 为高亮后的代码 HTML，code 为原始代码（用于复制），lang 为语言
+ */
+export function markdownToSegments(markdown) {
+  if (!markdown) return [];
+
+  // 支持 3 个及以上反引号的围栏，闭合需与开围栏数量一致（见 parseCodeBlock 说明）
+  const codeBlockRegex = /(`{3,})([^\n`]*)\n?([\s\S]*?)\1/g;
+  const segments = [];
+  let lastIndex = 0;
+  let match;
+
+  // 将一段非代码文本转为 text 片段（为空则跳过）
+  const pushText = (raw) => {
+    if (!raw) return;
+    const html = markdownToHtml(raw);
+    if (html) {
+      segments.push({ type: 'text', html });
+    }
+  };
+
+  while ((match = codeBlockRegex.exec(markdown)) !== null) {
+    // 代码块之前的普通文本
+    pushText(markdown.slice(lastIndex, match.index));
+
+    const lang = (match[2] || '').trim().split(/\s+/)[0] || '';
+    const code = match[3].replace(/\n$/, '');
+    segments.push({
+      type: 'code',
+      lang,
+      code,
+      html: highlightCode(code, lang),
+    });
+
+    lastIndex = codeBlockRegex.lastIndex;
+  }
+
+  // 末尾剩余文本
+  pushText(markdown.slice(lastIndex));
+
+  return segments;
 }
 
 /**

@@ -38,8 +38,25 @@
           <view class="bubble bubble-received" :class="{ 'bubble-done': !m.typing && m._justFinished }">
             <!-- 打字中显示纯文本 -->
             <text v-if="m.typing" class="bubble-text">{{ m.content }}</text>
-            <!-- 打字完成后显示 Markdown 渲染 -->
-            <rich-text v-if="!m.typing" class="bubble-markdown" :nodes="m.renderedContent"></rich-text>
+            <!-- 打字完成后按片段渲染：普通文本走 rich-text，代码块用原生组件（带复制按钮） -->
+            <view v-if="!m.typing" class="bubble-markdown">
+              <block v-for="(seg, sidx) in m.segments" :key="sidx">
+                <!-- 普通 Markdown 文本 -->
+                <rich-text v-if="seg.type === 'text'" :nodes="seg.html"></rich-text>
+                <!-- 代码块 -->
+                <view v-else class="code-block">
+                  <view class="code-header">
+                    <text class="code-lang">{{ seg.lang || 'code' }}</text>
+                    <view class="code-copy-btn" @tap="copyCode(seg.code)">
+                      <text class="code-copy-text">复制</text>
+                    </view>
+                  </view>
+                  <scroll-view scroll-x class="code-scroll">
+                    <rich-text class="code-content" :nodes="seg.html"></rich-text>
+                  </scroll-view>
+                </view>
+              </block>
+            </view>
             <view v-if="m.typing" class="typing-indicator">
               <view class="typing-dot"></view>
               <view class="typing-dot"></view>
@@ -127,7 +144,7 @@ import {
   getHistory,
 } from '../../api/chat';
 import { USE_STREAM } from '../../api/config';
-import { markdownToHtml } from '../../utils/markdown';
+import { markdownToSegments } from '../../utils/markdown';
 
 // 本地存储 key：保存当前会话 ID，下次进入小程序时恢复历史
 const CONVERSATION_STORAGE_KEY = 'ai_cs_conversation_id';
@@ -202,13 +219,13 @@ export default {
             const aiMsg = {
               role: 'ai',
               content: item.answer,
-              renderedContent: '',
+              segments: [],
               typing: false,
               sources: item.sources || [],
               feedback: item.feedback || 0,
               messageId: item.id || '',
             };
-            aiMsg.renderedContent = this.renderMarkdown(item.answer);
+            aiMsg.segments = this.renderMarkdown(item.answer);
             msgs.push(aiMsg);
           }
         });
@@ -239,8 +256,17 @@ export default {
     },
 
     renderMarkdown(content) {
-      if (!content) return '';
-      return markdownToHtml(content);
+      if (!content) return [];
+      return markdownToSegments(content);
+    },
+
+    /** 复制代码块内容 */
+    copyCode(code) {
+      if (!code) return;
+      uni.setClipboardData({
+        data: code,
+        success: () => uni.showToast({ title: '代码已复制', icon: 'none' }),
+      });
     },
 
     /** 来源去重：返回不重复的文档名数组 */
@@ -274,7 +300,7 @@ export default {
       const aiMsg = {
         role: 'ai',
         content: '',
-        renderedContent: '',
+        segments: [],
         typing: true,
         sources: [],
         feedback: 0,
@@ -307,13 +333,13 @@ export default {
         aiMsg.sources = data.sources || [];
         await this.typeWriter(aiMsg, data.answer || '（暂无回答）');
         // 打字完成后，渲染 Markdown 并触发完成动画
-        aiMsg.renderedContent = this.renderMarkdown(aiMsg.content);
+        aiMsg.segments = this.renderMarkdown(aiMsg.content);
         aiMsg._justFinished = true;
         this.$forceUpdate();
       } catch (e) {
         aiMsg.typing = false;
         aiMsg.content = e.message || '智能客服繁忙，请稍后再试或转人工';
-        aiMsg.renderedContent = this.renderMarkdown(aiMsg.content);
+        aiMsg.segments = this.renderMarkdown(aiMsg.content);
       } finally {
         aiMsg.typing = false;
         this.sending = false;
@@ -339,7 +365,7 @@ export default {
               aiMsg.messageId = data.messageId || data.difyMessageId || '';
               aiMsg.sources = data.sources || [];
               aiMsg.typing = false;
-              aiMsg.renderedContent = this.renderMarkdown(aiMsg.content || '（暂无回答）');
+              aiMsg.segments = this.renderMarkdown(aiMsg.content || '（暂无回答）');
               aiMsg._justFinished = true;
               this.$forceUpdate();
               this.sending = false;
@@ -349,7 +375,7 @@ export default {
             onError: (message) => {
               aiMsg.typing = false;
               aiMsg.content = message || '智能客服繁忙，请稍后再试或转人工';
-              aiMsg.renderedContent = this.renderMarkdown(aiMsg.content);
+              aiMsg.segments = this.renderMarkdown(aiMsg.content);
               this.sending = false;
               this.scrollToBottom();
               resolve();
@@ -778,7 +804,8 @@ page {
 .bubble-markdown .code-header {
   display: flex;
   align-items: center;
-  padding: 10rpx 24rpx;
+  justify-content: space-between;
+  padding: 8rpx 16rpx 8rpx 24rpx;
   background: #eaeef2;
   border-bottom: 1rpx solid #d0d7de;
 }
@@ -787,6 +814,33 @@ page {
   font-size: 22rpx;
   color: #57606a;
   font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+}
+
+/* 复制按钮 */
+.bubble-markdown .code-copy-btn {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 18rpx;
+  background: #ffffff;
+  border: 1rpx solid #d0d7de;
+  border-radius: var(--radius-full);
+  transition: all 0.15s ease;
+}
+
+.bubble-markdown .code-copy-btn:active {
+  transform: scale(0.92);
+  background: #f1f5f9;
+}
+
+.bubble-markdown .code-copy-text {
+  font-size: 22rpx;
+  color: #57606a;
+  line-height: 1;
+}
+
+/* 代码横向滚动容器 */
+.bubble-markdown .code-scroll {
+  width: 100%;
 }
 
 /* ===== 底部区域 ===== */
@@ -1379,6 +1433,9 @@ page {
   .bubble-markdown .code-content { color: #f5f5f7; }
   .bubble-markdown .code-header { background: #2c2c2e; border-bottom-color: #38383a; }
   .bubble-markdown .code-lang { color: #98989d; }
+  .bubble-markdown .code-copy-btn { background: #3a3a3c; border-color: #48484a; }
+  .bubble-markdown .code-copy-btn:active { background: #48484a; }
+  .bubble-markdown .code-copy-text { color: #f5f5f7; }
 
   /* 行内代码 */
   .bubble-markdown .inline-code {
