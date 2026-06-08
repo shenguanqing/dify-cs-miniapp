@@ -8,6 +8,8 @@
     "mp-weixin" : {
         "appid" : "",
         "darkmode" : true,
+        "themeLocation" : "theme.json",
+        "lazyCodeLoading" : "requiredComponents",
         "setting" : {
             "urlCheck" : false,
             "es6" : true,
