@@ -1159,14 +1159,16 @@ page {
 }
 
 .bubble-markdown .table-header {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 16rpx 20rpx;
   text-align: left;
   font-weight: 700;
   color: var(--color-text-primary);
   border-right: 2rpx solid #d0d7de;
   border-bottom: 2rpx solid #d0d7de;
-  white-space: nowrap;
+  word-break: break-word;
 }
 
 .bubble-markdown .table-header:last-child {
@@ -1187,12 +1189,14 @@ page {
 }
 
 .bubble-markdown .table-cell {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 14rpx 20rpx;
   border-right: 2rpx solid #d0d7de;
   border-bottom: 2rpx solid #d0d7de;
   color: var(--color-text-secondary);
-  vertical-align: top;
+  word-break: break-word;
 }
 
 .bubble-markdown .table-cell:last-child {

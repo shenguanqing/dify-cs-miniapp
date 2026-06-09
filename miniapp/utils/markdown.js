@@ -272,11 +272,18 @@ function parseTable(lines, startIndex) {
     return { html: '', endIndex: startIndex };
   }
 
+  // 按 | 拆分一行为单元格：仅去掉首尾边框竖线，保留行内空单元格
+  // （不能简单 filter(空)，否则 `| a |  | c |` 里的空格列会被吞掉导致列错位）
+  const splitRow = (line) => {
+    let s = line.trim();
+    if (s.startsWith('|')) s = s.slice(1);
+    if (s.endsWith('|')) s = s.slice(0, -1);
+    return s.split('|').map((cell) => cell.trim());
+  };
+
   // 解析表头
-  const headerCells = tableLines[0]
-    .split('|')
-    .filter((cell) => cell.trim() !== '')
-    .map((cell) => cell.trim());
+  const headerCells = splitRow(tableLines[0]);
+  const colCount = headerCells.length;
 
   // 检查分隔行（第二行应该包含 ---）
   const separatorLine = tableLines[1];
@@ -297,10 +304,10 @@ function parseTable(lines, startIndex) {
   // 表体
   html += '<tbody class="table-body">';
   for (let j = 2; j < tableLines.length; j++) {
-    const cells = tableLines[j]
-      .split('|')
-      .filter((cell) => cell.trim() !== '')
-      .map((cell) => cell.trim());
+    const cells = splitRow(tableLines[j]);
+    // 对齐列数：不足补空、超出截断，保证每行与表头列数一致
+    while (cells.length < colCount) cells.push('');
+    cells.length = colCount;
 
     html += '<tr class="table-row">';
     cells.forEach((cell) => {
