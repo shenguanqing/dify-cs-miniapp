@@ -26,7 +26,7 @@
         <!-- 用户气泡（右侧）-->
         <view v-if="m.role === 'user'" class="row row-right">
           <view class="bubble bubble-sent">
-            <text class="bubble-text">{{ m.content }}</text>
+            <text class="bubble-text" user-select selectable>{{ m.content }}</text>
           </view>
         </view>
 
@@ -35,11 +35,11 @@
           <view class="ai-avatar">
             <text class="avatar-text">AI</text>
           </view>
-          <view class="bubble bubble-received" :class="{ 'bubble-done': !m.typing && m._justFinished }">
-            <!-- 打字中显示纯文本 -->
-            <text v-if="m.typing" class="bubble-text">{{ m.content }}</text>
-            <!-- 打字完成后按片段渲染：普通文本走 rich-text，代码块用原生组件（带复制按钮） -->
-            <view v-if="!m.typing" class="bubble-markdown">
+          <view class="bubble bubble-received" :class="{ 'bubble-done': !m.typing && m._justFinished }" @longpress="copyText(m.content)">
+            <!-- 流式首包到达前（还没解析出片段）显示纯文本占位 -->
+            <text v-if="m.typing && !(m.segments && m.segments.length)" class="bubble-text" user-select selectable>{{ m.content }}</text>
+            <!-- 按片段渲染（流式时实时更新）：普通文本走 rich-text，代码块用原生组件（带复制按钮） -->
+            <view v-if="m.segments && m.segments.length" class="bubble-markdown">
               <block v-for="(seg, sidx) in m.segments" :key="sidx">
                 <!-- 普通 Markdown 文本 -->
                 <rich-text v-if="seg.type === 'text'" :nodes="seg.html"></rich-text>
@@ -355,6 +355,12 @@ export default {
           {
             onChunk: (chunk) => {
               aiMsg.content += chunk;
+              // 边收边解析 Markdown 实时渲染，节流到约每 120ms 一次避免频繁重排
+              const now = Date.now();
+              if (now - (aiMsg._lastRender || 0) > 120) {
+                aiMsg._lastRender = now;
+                aiMsg.segments = this.renderMarkdown(aiMsg.content);
+              }
               this.scrollToBottom();
             },
             onDone: (data) => {
@@ -404,6 +410,7 @@ export default {
     },
 
     copyText(text) {
+      if (!text) return;
       uni.setClipboardData({
         data: text,
         success: () => uni.showToast({ title: '已复制', icon: 'none' }),
